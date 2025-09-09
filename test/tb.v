@@ -1,19 +1,19 @@
 `default_nettype none
 `timescale 1ns / 1ps
 
-/* This testbench just instantiates the module and makes some convenient wires
-   that can be driven / tested by the cocotb test.py.
+/* This testbench instantiates the tt_um_rr_arbiter4 module
+   and drives some example request patterns.
 */
 module tb ();
 
-  // Dump the signals to a VCD file. You can view it with gtkwave or surfer.
+  // Dump the signals to a VCD file. You can view with GTKWave or Surfer.
   initial begin
     $dumpfile("tb.vcd");
     $dumpvars(0, tb);
     #1;
   end
 
-  // Wire up the inputs and outputs:
+  // Signals
   reg clk;
   reg rst_n;
   reg ena;
@@ -22,28 +22,53 @@ module tb ();
   wire [7:0] uo_out;
   wire [7:0] uio_out;
   wire [7:0] uio_oe;
+
 `ifdef GL_TEST
   wire VPWR = 1'b1;
   wire VGND = 1'b0;
 `endif
 
-  // Replace tt_um_example with your module name:
-  tt_um_example user_project (
-
-      // Include power ports for the Gate Level test:
+  // Instantiate DUT (Device Under Test)
+  tt_um_rr_arbiter4 user_project (
 `ifdef GL_TEST
       .VPWR(VPWR),
       .VGND(VGND),
 `endif
-
-      .ui_in  (ui_in),    // Dedicated inputs
-      .uo_out (uo_out),   // Dedicated outputs
-      .uio_in (uio_in),   // IOs: Input path
-      .uio_out(uio_out),  // IOs: Output path
-      .uio_oe (uio_oe),   // IOs: Enable path (active high: 0=input, 1=output)
-      .ena    (ena),      // enable - goes high when design is selected
-      .clk    (clk),      // clock
-      .rst_n  (rst_n)     // not reset
+      .ui_in  (ui_in),
+      .uo_out (uo_out),
+      .uio_in (uio_in),
+      .uio_out(uio_out),
+      .uio_oe (uio_oe),
+      .ena    (ena),
+      .clk    (clk),
+      .rst_n  (rst_n)
   );
 
+  // Clock generation
+  initial begin
+    clk = 0;
+    forever #5 clk = ~clk; // 100MHz clock
+  end
+
+  // Stimulus
+  initial begin
+    // Default values
+    ena    = 1;
+    uio_in = 8'h00;
+    ui_in  = 8'h00;
+    rst_n  = 0;
+
+    // Release reset
+    #10 rst_n = 1;
+
+    // Test different request patterns
+    #10 ui_in[3:0] = 4'b1000;   // only req3 active
+    #20 ui_in[3:0] = 4'b0101;   // req0 and req2 active
+    #30 ui_in[3:0] = 4'b1111;   // all active
+    #40 ui_in[3:0] = 4'b0010;   // only req1 active
+    #40 ui_in[3:0] = 4'b0000;   // no request
+    #100 $finish;
+  end
+
 endmodule
+
