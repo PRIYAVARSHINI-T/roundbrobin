@@ -16,8 +16,7 @@ project:
   # List your project's source files here.
   # Make sure the files exist in ./src
   source_files:
-    - "rr_arbiter4.v"
-    - "tt_um_rr_arbiter4.v"
+    - "project.v"
 
 # The pinout of your project. 
 pinout:
